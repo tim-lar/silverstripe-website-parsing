@@ -1,0 +1,26 @@
+{
+  "name": "ntb/silverstripe-website-parsing",
+  "description": "Add ability to parse external websites for their meta data.",
+  "type": "silverstripe-module",
+  "homepage": "https://github.com/notthatbad/silverstripe-website-parsing",
+  "keywords": [
+    "silverstripe",
+    "opengraph",
+    "parsing",
+    "meta"
+  ],
+  "require": {
+    "silverstripe/framework": ">=3.1.13",
+    "mockery/mockery": "~0.9",
+    "php": ">=5.4.0",
+    "composer/installers": "*",
+    "neitanod/forceutf8": "dev-master"
+  },
+  "license": "BSD-3-Clause",
+  "authors": [
+    {
+      "name": "Christian Blank",
+      "email": "christian.blank@haw-hamburg.de"
+    }
+  ]
+}
