@@ -12,13 +12,15 @@ class ParseWebsiteTask extends BuildTask {
     protected $enabled = true;
 
     /**
-     * @param SS_HTTPRequest$request
+     * @param SS_HTTPRequest $request
+     * @return string
      */
     public function run($request) {
         $target = urldecode($request->getVar('target'));
-        $xpath = WebsiteParser::load_xpath($target);
-        $og = WebsiteParser::get_open_graph_data($xpath);
-        $meta = WebsiteParser::get_meta_data($xpath);
-        var_dump($og, $meta);
+        if(!$target) {
+           return "Please provide a target as GET param.";
+        }
+        $parsedData = WebsiteParser::parse($target);
+        var_dump($parsedData);
     }
 }

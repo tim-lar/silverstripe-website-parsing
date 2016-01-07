@@ -1,0 +1,13 @@
+---
+Name: website_parsing
+After:
+  - 'framework/*'
+  - 'cms/*'
+---
+Injector:
+  Fetcher:
+    class:  ContentsFetcher
+TumblrApi:
+  Key: foobarbaz
+SoundCloudApi:
+  Key: foobarbaz

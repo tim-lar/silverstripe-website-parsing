@@ -4,13 +4,13 @@
  * Implementation for the Tumblr api.
  *
  */
-class TumblrIApi implements IApiProvider {
+class TumblrApi implements IApiProvider {
 
     /**
      * The public api key.
      * @var string
      */
-    private static $key = null;
+    private $key = null;
 
     /**
      * The base path for the api.
@@ -36,37 +36,30 @@ class TumblrIApi implements IApiProvider {
      */
     private static $domain = 'tumblr.com';
 
+    public function __construct() {
+        $this->key = Config::inst()->get('TumblrApi', 'Key');
+    }
 
     public function isProvided($url) {
         return strpos(parse_url($url, PHP_URL_HOST), self::$domain) !== false;
     }
 
-    public function search($url, $idTopic) {
+    public function search($url) {
         $host = parse_url($url, PHP_URL_HOST);
-        $infoUrl = self::$api_base . $host . self::$api_blog_info . self::$key;
-        $avatarUrl = self::$api_base . $host . self::$api_blog_avatar;
-
-        $jsonData = WebsiteParser::get_data($infoUrl);
-
+        $infoUrl = Controller::join_links(self::$api_base, $host, self::$api_blog_info . $this->key);
+        $avatarUrl = Controller::join_links(self::$api_base, $host, self::$api_blog_avatar);
+        $jsonData = Injector::inst()->get('Fetcher')->fetch($infoUrl);
         $infoData = json_decode($jsonData, true);
-
-
         if ($infoData['meta']['status'] == 200) {
-            $it = new ImageThumbnails('Topic');
-
-            $image = array();
-            if (isset($data['artwork_url']) && $it->saveThumbnails($avatarUrl, $idTopic)) {
-                $image['strImage'] = $avatarUrl;
-                $image['booImageCache'] = 1;
-            }
-
-            $result = array(
-                'strTitle' => $infoData['response']['blog']['title'],
-                'strDescription' => $infoData['response']['blog']['description']
-            );
-
-            return array_merge($result, $image);
+            $result = [
+                'Type' => 'tumblr',
+                'Image' => $avatarUrl,
+                'Title' => $infoData['response']['blog']['title'],
+                'Description' => $infoData['response']['blog']['description']
+            ];
+            return ParseResult::create($result);
         }
+        return ParseResult::create(['Error' => "'$infoUrl' can't be found on tumblr.com"]);
     }
 
 }

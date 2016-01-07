@@ -15,18 +15,13 @@ class WebsiteParser extends Object {
      * This method creates a xpath object from a given url and stores them in
      * curXpathObj.
      *
-     * @param string $url the url to fetch from
+     * @param string $html the html of a website in UTF8
      * @return DOMXPath
      */
-    public static function load_xpath($url) {
+    public static function load_xpath($html) {
         libxml_use_internal_errors(true);
-        $data = self::get_data($url);
-        if(!$data) {
-            return null;
-        }
-        $utf8_data = ForceUTF8\Encoding::toUTF8($data);
         $doc = new DomDocument();
-        $utf8_data = mb_convert_encoding($utf8_data, 'HTML-ENTITIES', "UTF-8");
+        $utf8_data = mb_convert_encoding($html, 'HTML-ENTITIES', "UTF-8");
         $doc->loadHTML($utf8_data);
         return new DOMXPath($doc);
     }
@@ -43,9 +38,11 @@ class WebsiteParser extends Object {
         $query = "//*/meta[starts-with(@property, 'og:')]|//*/meta[starts-with(@property, 'OG:')]";
         $metas = $xpathObject->query($query);
         foreach ($metas as $meta) {
-            $property = $meta->getAttribute('property');
+            /** @var DOMNode $meta */
+            // remove 'og:'
+            $property = substr($meta->getAttribute('property'), 3);
             $content = $meta->getAttribute('content');
-            $rmetas[strtolower($property)] = trim($content);
+            $rmetas[ucfirst(strtolower($property))] = trim($content);
         }
         if(empty($rmetas)) {
             // fallback for wrong use of open graph protocol
@@ -53,9 +50,10 @@ class WebsiteParser extends Object {
             $metas = $xpathObject->query($query);
             foreach ($metas as $meta) {
                 /** @var DOMNode $meta */
-                $property = $meta->getAttribute('name');
+                // remove 'og:'
+                $property = substr($meta->getAttribute('name'), 3);
                 $content = $meta->getAttribute('content');
-                $rmetas[strtolower($property)] = trim($content);
+                $rmetas[ucfirst(strtolower($property))] = trim($content);
             }
         }
         return $rmetas;
@@ -68,7 +66,7 @@ class WebsiteParser extends Object {
      * @return array tags like title, description and image
      */
     public static function get_meta_data($xpathObject) {
-        $rmetas = array();
+        $rmetas = [];
         $query = '//*/meta | //*/title | //*/link[starts-with(@rel,\'image_src\')]';
         $metas = $xpathObject->query($query);
         foreach ($metas as $meta) {
@@ -76,13 +74,13 @@ class WebsiteParser extends Object {
             if (($meta->getAttribute('property') == 'description')
                 || ($meta->getAttribute('name') == 'description')) {
                 $content = $meta->getAttribute('content');
-                $rmetas['description'] = trim($content);
+                $rmetas['Description'] = trim($content);
             } else if ($meta->nodeName == 'title') {
                 $content = $meta->nodeValue;
-                $rmetas['title'] = trim($content);
+                $rmetas['Title'] = trim($content);
             } else if ($meta->getAttribute('rel') == 'image_src') {
                 $content = $meta->getAttribute('href');
-                $rmetas['image'] = $content;
+                $rmetas['Image'] = $content;
             }
         }
         return $rmetas;
@@ -98,12 +96,12 @@ class WebsiteParser extends Object {
      * @return string the src path of the image
      */
     public static function find_content_image($xpathObject, $url) {
-        $images = array();
+        $images = [];
         foreach ($xpathObject->query("(/html/body//img)[position() <= ".self::$count_of_images."]") as $node) {
             $src = $node->getAttribute('src');
-            if (!filter_var($src, FILTER_VALIDATE_URL)) {
+            if (Director::is_relative_url($src)) {
                 $parsedUrl = parse_url($url);
-                $src = "{$parsedUrl['scheme']}://{$parsedUrl['host']}/". (ltrim($src, '/'));
+                $src = Controller::join_links("{$parsedUrl['scheme']}://{$parsedUrl['host']}", $src);
             }
             $image = [
                 'src' => $src,
@@ -123,33 +121,6 @@ class WebsiteParser extends Object {
     }
 
     /**
-     * The method fetches data with curl and returns it as a string.
-     *
-     * @param string $url the url to fetch from
-     * @param int $timeout the connection will broke up after this time in seconds; Default: 1
-     * @return string the fetched file content
-     */
-    public static function get_data($url, $timeout=1) {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
-        curl_setopt($ch, CURLOPT_HEADER, 0);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_COOKIEJAR, "curlCookies.txt");
-        curl_setopt($ch, CURLOPT_COOKIEFILE, "curlCookies.txt");
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:17.0) Gecko/20100101 Firefox/17.0");
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'Content-Type: application/x-www-form-urlencoded; charset=utf-8',
-        ));
-        $data = curl_exec($ch);
-        curl_close($ch);
-        return $data;
-    }
-
-    /**
      * Factory method for all IApiProvider implementations.
      *
      * @return array an array of all (@link IApiProvider) instances
@@ -161,4 +132,37 @@ class WebsiteParser extends Object {
         }, $providers);
     }
 
+    /**
+     * @param string $url the url to parse
+     * @return ParseResult the website in a result object
+     */
+    public static function parse($url) {
+        // check if we have a provider
+        $providers = self::get_api_providers();
+        foreach($providers as $provider) {
+            /** @var IApiProvider $provider */
+            if($provider->isProvided($url)) {
+               return $provider->search($url);
+            }
+        }
+        // otherwise fetch data
+        try {
+            $html = Injector::inst()->get('Fetcher')->fetch($url);
+            // load xpath
+            $xpathObj = self::load_xpath($html);
+        } catch(Exception $ex) {
+            return ParseResult::create(['Error' => $ex->getMessage()]);
+        }
+        // find open graph and meta data
+        $ogData = self::get_open_graph_data($xpathObj);
+        $metaData = self::get_meta_data($xpathObj);
+        // merge data
+        $data = array_merge($metaData, $ogData);
+        // if no image provided - find image
+        if(!array_key_exists('Image', $data)) {
+            $data['Image'] = self::find_content_image($xpathObj, $url);
+        }
+        // create and return result
+        return ParseResult::create($data);
+    }
 }
