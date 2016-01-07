@@ -25,4 +25,4 @@ before_script:
   - cd ~/builds/ss
   - composer install
 script:
-  - vendor/bin/phpunit silverstripe-website-parsering/tests/
+  - vendor/bin/phpunit silverstripe-website-parseing/tests/
