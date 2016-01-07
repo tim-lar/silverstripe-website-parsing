@@ -3,6 +3,8 @@
 /**
  *
  * @property string Image
+ * @property string Title
+ * @property string Description
  */
 class ParseResult {
 
