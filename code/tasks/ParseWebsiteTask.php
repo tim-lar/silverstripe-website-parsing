@@ -2,6 +2,7 @@
 
 /**
  *
+ * @author Christian Blank <c.blank@notthatbad.net>
  */
 class ParseWebsiteTask extends BuildTask {
 

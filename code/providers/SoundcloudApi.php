@@ -3,6 +3,7 @@
 /**
  * Implementation for the SoundCloud api. Read more of the api on
  * http://developers.soundcloud.com/docs/api
+ * @author Christian Blank <c.blank@notthatbad.net>
  */
 class SoundCloudApi implements IApiProvider {
     /**

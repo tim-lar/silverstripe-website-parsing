@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Class CurlFetcher
+ * @author Christian Blank <c.blank@notthatbad.net>
+ */
 class CurlFetcher implements IFetcher {
 
 

@@ -2,6 +2,7 @@
 
 /**
  * An interface for all api providers.
+ * @author Christian Blank <c.blank@notthatbad.net>
  */
 interface IApiProvider {
     /**

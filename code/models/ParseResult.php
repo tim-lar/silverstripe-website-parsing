@@ -5,6 +5,7 @@
  * @property string Image
  * @property string Title
  * @property string Description
+ * @author Christian Blank <c.blank@notthatbad.net>
  */
 class ParseResult {
 

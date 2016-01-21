@@ -3,6 +3,7 @@
 /**
  * Implementation for the Tumblr api.
  *
+ * @author Christian Blank <c.blank@notthatbad.net>
  */
 class TumblrApi implements IApiProvider {
 
