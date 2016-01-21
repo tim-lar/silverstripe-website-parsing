@@ -11,3 +11,5 @@ TumblrApi:
   Key: foobarbaz
 SoundCloudApi:
   Key: foobarbaz
+ImageFetcher:
+  Folder: websites

@@ -103,10 +103,11 @@ class WebsiteParser extends Object {
                 $parsedUrl = parse_url($url);
                 $src = Controller::join_links("{$parsedUrl['scheme']}://{$parsedUrl['host']}", $src);
             }
+            $generator = new RandomGenerator();
+            $imageObject = ImageFetcher::fetch_file_by_url($src, $generator->randomToken());
             $image = [
                 'src' => $src,
-                // TODO: get correct image size
-                'size' => ['width' => 0, 'height' => 0]];
+                'size' => ['width' => $imageObject->getWidth(), 'height' => $imageObject->getHeight()]];
             $image['pixels'] = $image['size']['width'] * $image['size']['height'];
             $images[] = $image;
         }
