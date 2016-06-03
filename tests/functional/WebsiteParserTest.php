@@ -35,9 +35,7 @@ class WebsiteParserTest extends SapphireTest {
 }
 
 class TestFetcher implements IFetcher, TestOnly {
-
-    private static $data = [
-        "http://normal.site" => <<<EOT
+    const HTML_DOC = <<<'EOT'
 <!doctype html>
 <html lang="en">
 <head>
@@ -49,8 +47,10 @@ class TestFetcher implements IFetcher, TestOnly {
 
 </body>
 </html>
-EOT
-        ,
+EOT;
+
+    private static $data = [
+        "http://normal.site" => TestFetcher::HTML_DOC,
     ];
 
     public function fetch($url) {
