@@ -6,7 +6,9 @@ After:
 ---
 Injector:
   Fetcher:
-    class:  ContentsFetcher
+    class: ContentsFetcher
+  ImageFetcher:
+    class: ImageFetcher
 TumblrApi:
   Key: foobarbaz
 SoundCloudApi:

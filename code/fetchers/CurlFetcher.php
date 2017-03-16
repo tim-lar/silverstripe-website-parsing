@@ -30,7 +30,14 @@ class CurlFetcher implements IFetcher {
             'Content-Type: application/x-www-form-urlencoded; charset=utf-8',
         ));
         $data = curl_exec($ch);
+        $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
+
+        // We don't want to process an error page
+        if($http_status >= 400){
+            throw new Exception("Page not found", $http_status);
+        }
+
         return ForceUTF8\Encoding::toUTF8($data);
     }
 }
