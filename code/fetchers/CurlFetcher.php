@@ -33,8 +33,10 @@ class CurlFetcher implements IFetcher {
         $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
+        $data = trim($data);
+
         // We don't want to process an error page
-        if($http_status >= 400){
+        if($http_status >= 400 || empty($data)){
             throw new Exception("Page not found", $http_status);
         }
 
