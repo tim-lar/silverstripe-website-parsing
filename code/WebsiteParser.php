@@ -103,13 +103,20 @@ class WebsiteParser extends Object {
                 $parsedUrl = parse_url($url);
                 $src = Controller::join_links("{$parsedUrl['scheme']}://{$parsedUrl['host']}", $src);
             }
-            $generator = new RandomGenerator();
-            $imageObject = ImageFetcher::fetch_file_by_url($src, $generator->randomToken());
-            $image = [
-                'src' => $src,
-                'size' => ['width' => $imageObject->getWidth(), 'height' => $imageObject->getHeight()]];
-            $image['pixels'] = $image['size']['width'] * $image['size']['height'];
-            $images[] = $image;
+            // Instead of downloading each image just to get the dimensions, use the excellent FastImage class to
+            // download the bare minimum of data required to ascertain the dimensions
+            try {
+                $image = new \FastImage\FastImage();
+                $image->load($src);
+                list($width, $height) = $image->getSize();
+                $image = [
+                    'src' => $src,
+                    'size' => ['width' => $width, 'height' => $height]];
+                $image['pixels'] = $image['size']['width'] * $image['size']['height'];
+                $images[] = $image;
+            }catch(Exception $exception){
+                continue;
+            }
         }
         usort($images, function($a, $b) {
             if($a['pixels'] != $b['pixels']) {
