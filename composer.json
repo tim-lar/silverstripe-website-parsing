@@ -14,7 +14,8 @@
     "mockery/mockery": "~0.9",
     "php": ">=5.4.0",
     "composer/installers": "*",
-    "neitanod/forceutf8": "dev-master"
+    "neitanod/forceutf8": "dev-master",
+    "romaricdrigon/fastimage": "0.9.2"
   },
   "license": "BSD-3-Clause",
   "authors": [
