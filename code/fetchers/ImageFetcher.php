@@ -7,10 +7,16 @@
     class ImageFetcher extends Object {
 
         private static $curl_options = array(
+            CURLOPT_RETURNTRANSFER => 1,
             CURLOPT_HEADER         => 0,
             CURLOPT_FOLLOWLOCATION => 1,
             CURLOPT_TIMEOUT        => 60, // 1 minute timeout
-            CURLOPT_SSL_VERIFYPEER => 0
+            CURLOPT_CONNECTTIMEOUT => 60, // 1 minute timeout
+            CURLOPT_SSL_VERIFYPEER => 0,
+            CURLOPT_COOKIEJAR      => "curlCookies.txt",
+            CURLOPT_COOKIEFILE     => "curlCookies.txt",
+            CURLOPT_USERAGENT      => "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:17.0) Gecko/20100101 Firefox/17.0",
+            CURLOPT_HTTPHEADER      => ["Content-Type: application/x-www-form-urlencoded","charset=utf-8"],
         );
 
         /**
@@ -25,21 +31,31 @@
             $folder	= Folder::find_or_make(Config::inst()->get('ImageFetcher', 'Folder'));
             $relativeFilePath = $folder->Filename . $fileName;
             $fullFilePath = Controller::join_links($basePath, $relativeFilePath);
+
             if (!file_exists($fullFilePath)){
                 // download the file
                 $fp = fopen($fullFilePath, 'w');
                 $ch = curl_init($url);
 
                 // set URL and other appropriate options
-                $default_options = array(CURLOPT_FILE => $fp);
                 $config_options = Config::inst()->get('ImageFetcher', 'curl_options');
-                $options = $default_options + $config_options;
-
-                curl_setopt_array($ch, $options);
+                curl_setopt_array($ch, $config_options);
+                curl_setopt($ch, CURLOPT_FILE, $fp);
+                curl_setopt($ch, CURLOPT_URL, $url);
                 curl_exec($ch);
+
+                $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                 curl_close($ch);
+
                 fclose($fp);
+
+                if(substr($http_status, 0,1)!=="2"){
+                    // ERROR - delete this file
+                    unlink($fullFilePath);
+                    return false;
+                }
             }
+
             $file = new Image();
             $file->ParentID	= $folder->ID;
             $file->OwnerID	= 0;
